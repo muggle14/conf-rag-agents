@@ -163,3 +163,4 @@ raw_data/
 azure-functions-core-tools/
 deployment.zip
 local.settings.json
+/Users/hc/proj_v101/confluence-QandA-agents/infra/todo-setup-keyvault.sh
