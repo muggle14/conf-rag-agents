@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.ask_endpoint import router as ask_router
 from api.trace_stream import attach_trace_handler
 from api.trace_stream import router as trace_router
 from api.trace_stream_otel import attach_otel_sse_processor
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     app.include_router(
         otel_trace_router, prefix="/otel", tags=["OpenTelemetry Tracing"]
     )
+    app.include_router(ask_router, tags=["Q&A"])
 
     @app.get("/")
     async def root():
@@ -46,6 +48,8 @@ def create_app() -> FastAPI:
             "service": "Confluence RAG Agents",
             "status": "operational",
             "endpoints": {
+                "ask": "/ask",
+                "ask_full": "/ask/full",
                 "legacy_trace": "/trace/{trace_id}",
                 "otel_trace": "/otel/trace/{trace_id}",
                 "otel_all": "/otel/trace",

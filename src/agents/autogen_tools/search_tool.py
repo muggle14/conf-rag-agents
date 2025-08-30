@@ -128,11 +128,22 @@ class AzureSearchTool:
             hits = []
             for r in results:
                 # Build hit dictionary with available fields
+                # Azure Search SDK may return score with or without @ prefix
+                # Check both variations
+                score_value = 0
+                if "@search.score" in r:
+                    score_value = r["@search.score"]
+                elif "search.score" in r:
+                    score_value = r["search.score"]
+                else:
+                    # If neither exists, default to 0
+                    score_value = 0
+
                 hit = {
                     "id": r.get("id", ""),
                     "title": r.get("title", "No Title"),
                     "url": r.get("url", ""),
-                    "score": r.get("@search.score", 0),
+                    "score": float(score_value) if score_value else 0.0,
                     "snippet": self._get_snippet(r),
                 }
 

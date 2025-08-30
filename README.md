@@ -135,6 +135,18 @@ python -m scripts.seed_blob
 
 ### Running Tests
 
+#### Prerequisites
+Set environment variables for integration tests:
+```bash
+export API_BASE="http://localhost:8000"
+export TEST_SPECIFIC_QUERY="Graph Enrichment Skill"
+export TEST_AMBIGUOUS_QUERY="architecture"
+export AZURE_SEARCH_ENDPOINT="https://your-search.search.windows.net"
+export AZURE_SEARCH_KEY="your-key"
+export COSMOS_GRAPH_DB_ENDPOINT="your-cosmos.gremlin.cosmos.azure.com"
+export COSMOS_GRAPH_DB_KEY="your-cosmos-key"
+```
+
 #### Unit Tests
 Run all unit tests:
 ```bash
@@ -145,6 +157,7 @@ Run specific unit test:
 ```bash
 pytest tests/unit/test_azure_search.py -v
 pytest tests/unit/test_graph_feedback.py -v
+pytest tests/unit/test_graph_tool.py::TestGraphNormalize -v -s
 ```
 
 #### Smoke Tests
@@ -176,6 +189,49 @@ pytest tests/smoke/test_smoke_blob.py -v
 - **Azure Search** (`test_smoke_azure_search.py`): Connection, vector search, hybrid search, filters
 - **Cosmos DB Graph** (`test_smoke_graph.py`): Connection, graph traversal, multi-hop traversal, edge creation
 - **Blob Storage** (`test_smoke_blob.py`): Connection, container verification, blob listing/reading, metadata
+
+#### Functional Tests
+Functional tests validate end-to-end API behavior with real services:
+```bash
+# Run all functional tests
+pytest tests/functional -v
+
+# Run specific functional tests
+pytest tests/functional/test_api_ask.py::test_specific_query_answers_and_has_tree -v -s
+pytest tests/functional/test_space_filter.py::test_space_filter_limits_sources -v -s
+pytest tests/functional/test_trace_sse.py::test_trace_has_expected_steps_and_payload_fields -v -s
+```
+
+- **API /ask endpoint** (`test_api_ask.py`): Response schema validation, clarification word count, answer sources and tree validation
+- **Space filtering** (`test_space_filter.py`): Space parameter limits sources, empty space handling, filter comparison tests
+- **SSE trace streaming** (`test_trace_sse.py`): Event sequence validation, payload field verification, timing constraints (<5s), confidence range validation
+
+#### Integration Tests
+Integration tests validate service interactions and performance:
+```bash
+# Run all integration tests
+pytest tests/integration -v -m integration
+
+# Run specific integration test files
+pytest tests/integration/test_retrieval_api.py::TestRetrievalAPI::test_specific_query_answers_and_has_tree -v -s
+pytest tests/integration/test_rerank_toggle.py::TestRerankToggle::test_rerank_changes_order_when_enabled -v -s
+pytest tests/integration/test_direct_services.py::TestDirectAzureSearch::test_search_topk_has_fields -v -s
+pytest tests/integration/test_graph_search_overlap.py::TestGraphSearchOverlap::test_neighbor_overlap_with_search_results -v -s
+
+# Run performance tests only
+pytest tests/integration -k "performance" -v -s
+
+# Run with specific environment
+API_BASE=http://localhost:8000 pytest tests/integration/test_retrieval_api.py -v -s
+```
+
+- **Retrieval API** (`test_retrieval_api.py`): /ask endpoint validation, latency guardrails (P95 <8s), primary_page_tree structure, confidence score correlation
+- **Rerank toggle** (`test_rerank_toggle.py`): Rerank flag behavior, order changes only when enabled, performance overhead measurement, quality improvements
+- **Direct services** (`test_direct_services.py`): Azure Search field validation, Cosmos Gremlin traversal, search-graph overlap calculation (≥5%)
+- **Graph-search overlap** (`test_graph_search_overlap.py`): Neighbor overlap analysis, tree generation performance (<250ms P95), graph enrichment value assessment
+- **Graph tool** (`test_graph_tool_integration.py`): GraphTool neighbors/tree methods, performance metrics, concurrent request handling
+- **Search reranker** (`test_search_reranker_integration.py`): GPT-4o reranking, order changes validation, space filter compatibility
+- **Orchestrator tests** (`test_orchestrator_*.py`): Agent decomposition, clarification flow, dependency injection patterns
 
 #### All Tests
 Run the complete test suite:

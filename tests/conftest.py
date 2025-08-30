@@ -57,3 +57,50 @@ def mock_search_results():
 def mock_embedding():
     """Provide a mock embedding vector."""
     return [0.1] * 1536  # Standard embedding size for text-embedding-ada-002
+
+
+# Functional test fixtures for API testing
+@pytest.fixture(scope="session")
+def api_base():
+    """Base URL for API testing."""
+    return os.getenv("API_BASE", "http://localhost:8000").rstrip("/")
+
+
+@pytest.fixture(scope="session")
+def ambiguous_query():
+    """Query that should trigger clarification."""
+    return os.getenv("TEST_AMBIGUOUS_QUERY", "architecture")
+
+
+@pytest.fixture(scope="session")
+def specific_query():
+    """Query that should return direct answer."""
+    # Pick a page you know exists in your Confluence index
+    return os.getenv("TEST_SPECIFIC_QUERY", "Graph Enrichment Skill")
+
+
+@pytest.fixture(scope="session")
+def test_space():
+    """Optional Confluence space filter."""
+    # Optional: constrain to a single space if your index supports it
+    return os.getenv("TEST_SPACE", None)
+
+
+# Synthesis testing fixtures
+@pytest.fixture(scope="session")
+def answer_min_words():
+    """Minimum word count for synthesized answers."""
+    return int(os.getenv("ANSWER_MIN_WORDS", "150"))
+
+
+@pytest.fixture(scope="session")
+def answer_max_words():
+    """Maximum word count for synthesized answers."""
+    return int(os.getenv("ANSWER_MAX_WORDS", "300"))
+
+
+@pytest.fixture(scope="session")
+def allowed_domains():
+    """Allowed domains for source citations."""
+    domains = os.getenv("ALLOWED_SOURCE_DOMAINS", "")
+    return [d.strip().lower() for d in domains.split(",") if d.strip()]

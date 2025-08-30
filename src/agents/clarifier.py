@@ -35,21 +35,35 @@ def ask_clarifying_question(query: str, top_titles: List[str]) -> str:
         A clarifying question (max 20 words)
     """
     # Initialize Azure OpenAI client
+    # Support both naming conventions for environment variables
+    endpoint = os.getenv("AOAI_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT")
+    api_key = os.getenv("AOAI_KEY") or os.getenv("AZURE_OPENAI_API_KEY")
+
+    if not endpoint or not api_key:
+        raise ValueError(
+            "Azure OpenAI credentials not found. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY"
+        )
+
     client = AzureOpenAI(
-        azure_endpoint=os.environ["AOAI_ENDPOINT"],
-        api_key=os.environ["AOAI_KEY"],
-        api_version="2025-01-01",
+        azure_endpoint=endpoint,
+        api_key=api_key,
+        api_version="2025-01-01-preview",
     )
 
     # Format the prompt
-    prompt = USER_TMPL.format(
-        query=query, titles="\n".join([f"- {t}" for t in top_titles[:4]])
-    )
+    # Handle None or empty titles gracefully
+    if top_titles:
+        titles_text = "\n".join([f"- {t}" for t in top_titles[:4]])
+    else:
+        titles_text = ""
+
+    prompt = USER_TMPL.format(query=query, titles=titles_text)
 
     try:
         # Call Azure OpenAI with JSON response format
+        deployment_name = os.getenv("AOAI_CHAT_DEPLOY", "gpt-4o")
         response = client.chat.completions.create(
-            model=os.getenv("AOAI_CHAT_DEPLOY", "gpt-4o"),
+            model=deployment_name,
             messages=[
                 {"role": "system", "content": SYSTEM},
                 {"role": "user", "content": prompt},
