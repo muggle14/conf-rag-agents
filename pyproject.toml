@@ -1,0 +1,374 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "confluence-qa"
+version = "1.0.0"
+description = "Confluence Q&A System with AutoGen and Azure Services"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Himanshu Chaturvedi", email = "h.chaturvedi14@gmail.com"}
+]
+keywords = ["confluence", "qa", "azure", "ai", "search", "autogen"]
+maintainers = [
+    {name = "Himanshu Chaturvedi", email = "h.chaturvedi14@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+dependencies = [
+    # AutoGen Framework
+    "pyautogen>=0.2.0",
+
+    # Azure Services
+    "azure-identity>=1.15.0",
+    "azure-search-documents>=11.5.0",
+    "azure-cosmos>=4.5.1",
+    "azure-storage-blob>=12.19.0",
+    "azure-functions>=1.18.0",
+    "azure-keyvault-secrets>=4.7.0",
+    "openai>=1.26",
+
+    # Web Framework
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+
+    # Graph Database
+    "gremlinpython>=3.7.0",
+
+    # Data Processing
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "networkx>=3.2.0",
+    "anytree>=2.9.0",
+    "beautifulsoup4>=4.12.0",
+
+    # Async Support
+    "aiofiles>=23.2.1",
+    "aiohttp>=3.12.0",
+
+    # Configuration
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.1",
+
+    # Utilities
+    "python-dateutil>=2.8.2",
+    "tiktoken>=0.7.0",
+    "requests>=2.31.0",
+    "typing-extensions>=4.0.0",
+
+    # Logging and Monitoring
+    "python-json-logger>=2.0.7",
+    "opencensus-ext-azure>=1.1.0",
+
+    # Testing
+    "pytest>=7.4.0",
+
+    # Code Quality
+    "ruff>=0.8.0",
+    "black>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.10.0",
+    "tox>=4.28.0",
+    "poetry>=2.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+    "pre-commit>=3.0.0",
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.10.0",
+    "httpx>=0.24.0",
+    "responses>=0.23.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "myst-parser>=2.0.0",
+]
+azure = [
+    "azure-functions>=1.18.0",
+    "azure-search-documents>=11.5.0",
+    "azure-cosmos>=4.5.0",
+    "azure-storage-blob>=12.19.0",
+    "azure-identity>=1.15.0",
+    "azure-keyvault-secrets>=4.7.0",
+    "opencensus-ext-azure>=1.1.0",
+]
+
+[project.scripts]
+confluence-qa = "confluence_qa.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/muggle14/confluence-agentic-rag"
+Documentation = "https://github.com/muggle14/confluence-agentic-rag#readme"
+Repository = "https://github.com/muggle14/confluence-agentic-rag.git"
+"Bug Tracker" = "https://github.com/muggle14/confluence-agentic-rag/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["src*", "agents*", "api*", "utils*", "monitoring*"]
+exclude = ["tests*", "docs*", "scripts*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yml", "*.yaml", "*.json", "*.md"]
+
+[tool.poetry]
+name = "confluence-qa-agents"
+version = "1.0.0"
+description = "Confluence Q&A System with AutoGen and Azure Services"
+authors = ["Himanshu Chaturvedi <h.chaturvedi14@gmail.com>"]
+readme = "README.md"
+packages = [{include = "confluence_qa", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+azure-functions = "^1.18.0"
+azure-search-documents = "^11.5.0"
+azure-cosmos = "^4.5.0"
+azure-storage-blob = "^12.19.0"
+azure-identity = "^1.15.0"
+azure-keyvault-secrets = "^4.7.0"
+openai = "^1.26.0"
+autogen = "^0.9.0"
+gremlinpython = "^3.7.0"
+tiktoken = "^0.7.0"
+opencensus-ext-azure = "^1.1.0"
+python-dotenv = "^1.0.0"
+aiohttp = "^3.12.0"
+pydantic = "^2.0.0"
+requests = "^2.31.0"
+typing-extensions = "^4.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.10.0"
+tox = "^4.28.0"
+black = "^23.0.0"
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+mypy = "^1.5.0"
+bandit = "^1.7.0"
+safety = "^2.3.0"
+pre-commit = "^3.0.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.10.0"
+httpx = "^0.24.0"
+responses = "^0.23.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.0"
+sphinx-rtd-theme = "^1.3.0"
+myst-parser = "^2.0.0"
+
+[tool.poetry.scripts]
+confluence-qa = "src.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["confluence_qa"]
+known_third_party = ["azure", "openai", "autogen", "pytest"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-v --tb=short --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests",
+    "smoke: marks tests as smoke tests for basic functionality verification",
+    "performance: marks tests as performance tests",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@\\(abc\\.\\)\\?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B601"]
+
+[tool.safety]
+policy = "strict"
+
+[tool.ruff]
+# Same as Black
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "W",  # pycodestyle warnings
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "PL", # Pylint
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "PLR0913", # Too many arguments
+    "PLR2004", # Magic value used in comparison
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"tests/*" = ["PLR2004", "S101"]
+"scripts/*" = ["T201"]  # Allow print statements in scripts
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py39, py310, py311, py312, py313
+isolated_build = True
+
+[testenv]
+deps =
+    pytest>=7.4.0
+    pytest-asyncio>=0.21.0
+    pytest-cov>=4.1.0
+    pytest-mock>=3.10.0
+    -r{toxinidir}/requirements.txt
+
+commands =
+    pytest {posargs:tests} --cov=src --cov-report=term-missing --cov-report=html
+    pytest {posargs:tests} --cov=src --cov-report=xml
+
+[testenv:lint]
+deps =
+    ruff>=0.8.0
+    black>=23.0.0
+    mypy>=1.5.0
+
+commands =
+    ruff check src tests
+    black --check src tests
+    mypy src
+
+[testenv:format]
+deps =
+    black>=23.0.0
+    ruff>=0.8.0
+
+commands =
+    black src tests
+    ruff check --fix src tests
+
+[testenv:security]
+deps =
+    bandit>=1.7.0
+    safety>=2.3.0
+
+commands =
+    bandit -r src
+    safety check
+
+[testenv:docs]
+deps =
+    sphinx>=7.0.0
+    sphinx-rtd-theme>=1.3.0
+    myst-parser>=2.0.0
+
+commands =
+    sphinx-build -b html docs docs/_build/html
+"""
