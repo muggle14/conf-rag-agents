@@ -52,7 +52,7 @@ venv.bak/
 *.ipynb
 
 # IDEs and Editors
-.vscode/
+
 .idea/
 *.swp
 *.swo
@@ -136,4 +136,31 @@ run-ingestion-test.py
 # Temporary Scripts
 test_*.py
 fix_*.py
-validate_*.py 
+validate_*.py
+
+
+local.settings.json
+env
+*.cert
+.venv/
+.python_packages/
+csx
+.vs
+edge
+Publish
+
+data/*.json
+data/*.csv
+processed_data/
+raw_data/
+*_test.py
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+.func/
+azure-functions-core-tools/
+deployment.zip
+local.settings.json
+/Users/hc/proj_v101/confluence-QandA-agents/infra/todo-setup-keyvault.sh

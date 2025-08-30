@@ -1,0 +1,10 @@
+{
+  "id": "3001",
+  "name": "System Monitoring Best Practices",
+  "content": "Effective system monitoring is crucial for maintaining high availability and performance. Key metrics to track include CPU usage, memory utilization, disk I/O, network latency, and application response times. Set up alerts for critical thresholds: CPU > 80%, Memory > 90%, Disk > 85%. Use dashboards to visualize trends and identify patterns. Implement log aggregation for centralized troubleshooting. Regular review of monitoring data helps prevent issues before they impact users.",
+  "url": "https://confluence.example.com/pages/3001",
+  "parent_page_id": "3000",
+  "children_ids": [],
+  "adjacent_ids": ["3002", "3003", "3004"],
+  "graph_centrality_score": 0.65
+}

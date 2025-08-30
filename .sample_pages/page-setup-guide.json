@@ -1,0 +1,18 @@
+{
+  "id": "2001",
+  "title": "Quick Setup Guide",
+  "body": {
+    "storage": {
+      "value": "<h1>Quick Setup Guide</h1><p>Follow these steps to get started:</p><ol><li>Install the software using the provided installer</li><li>Configure your database connection settings</li><li>Set up user authentication</li><li>Import your initial data</li><li>Configure monitoring dashboards</li></ol><p>For detailed instructions, see our <a href='/docs/detailed-setup'>comprehensive setup documentation</a>.</p>"
+    }
+  },
+  "url": "https://confluence.example.com/pages/2001",
+  "ancestors": [{"id": "2000"}],
+  "children": {
+    "page": [
+      {"id": "2002"},
+      {"id": "2003"}
+    ]
+  },
+  "graph_centrality_score": 0.72
+}

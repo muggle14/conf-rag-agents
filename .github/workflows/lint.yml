@@ -1,0 +1,59 @@
+name: Lint and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install ruff black pytest pytest-asyncio pytest-mock
+
+    - name: Lint with ruff
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        ruff check src --select=E9,F63,F7,F82 --output-format=github
+        # exit-zero treats all errors as warnings
+        ruff check src --exit-zero --output-format=github
+
+    - name: Format check with black
+      run: |
+        black --check src
+
+    - name: Run tests
+      run: |
+        pytest tests/unit/ -v --tb=short
+      env:
+        AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+        AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AOAI_EMBED_DEPLOY: ${{ secrets.AOAI_EMBED_DEPLOY }}
+        COSMOS_GRAPH_DB_ENDPOINT: ${{ secrets.COSMOS_GRAPH_DB_ENDPOINT }}
+        COSMOS_GRAPH_DB_KEY: ${{ secrets.COSMOS_GRAPH_DB_KEY }}

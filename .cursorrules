@@ -68,7 +68,13 @@
 
 Remember: Azure has likely already solved the problem - find and use their solution!
 
+## Version Management
+- **ALWAYS** use GA (General Availability) versions of Azure services and APIs
+- **NEVER** use preview, beta, or experimental versions in production code
+- **PREFER** stable, well-documented API versions
+- **AVOID** preview features unless explicitly required for development/testing
 
-## You don't need to agree with me all the times, but provide recommendations 
+
+## You don't need to agree with me all the times, but provide recommendations
 ## base on the reason and initial planning
-# don't output the full code and only edits for applying unless asked specifically. 
+# don't output the full code and only edits for applying unless asked specifically.

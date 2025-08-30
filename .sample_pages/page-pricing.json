@@ -1,0 +1,10 @@
+{
+  "id": "1001",
+  "title": "Product Pricing Guide",
+  "content": "Our comprehensive pricing structure offers flexible plans for businesses of all sizes. The Basic plan starts at $99/month and includes core features. The Professional plan at $299/month adds advanced analytics and priority support. Enterprise pricing is customized based on your specific needs and includes dedicated account management, custom integrations, and SLA guarantees. All plans include unlimited users and 24/7 customer support. Annual billing provides a 20% discount.",
+  "url": "https://confluence.example.com/pages/1001",
+  "parent_page_id": "1000",
+  "children_ids": ["1002", "1003"],
+  "adjacent_ids": ["1004"],
+  "graph_centrality_score": 0.85
+}

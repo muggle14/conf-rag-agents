@@ -9,13 +9,13 @@ azure-identity>=1.15.0
 azure-search-documents>=11.4.0
 azure-cosmos>=4.5.1
 azure-storage-blob>=12.19.0
-azure-openai>=1.0.0   # Uncomment this line
+# azure-openai package not needed - using openai package for Azure OpenAI
 
 # Azure Functions
 azure-functions==1.19.0
 
 # OpenAI
-openai>=1.0.0
+openai>=1.26
 
 # Web Framework
 fastapi>=0.104.1
@@ -46,9 +46,23 @@ python-dateutil>=2.8.2
 python-json-logger>=2.0.7
 
 # Testing (optional, for development)
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
+pytest>=8.4.1
+pytest-asyncio>=1.1.0
 pytest-cov>=4.1.0
+pytest-mock>=3.14.1
+
+# Development Tools
+poetry>=2.1.0
+tox>=4.28.0
+aiohttp>=3.12.0
+
+# Code Quality & Linting
+ruff==0.12.7
+black==25.1.0
+pre-commit==4.2.0
+
+# AutoGen Framework (with all extras)
+autogen[all]>=0.9.0
 
 azure-functions
 azure-storage-blob
@@ -64,9 +78,10 @@ azure-storage-blob==12.19.0
 pandas==2.1.3
 
 # Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest==8.4.1
+pytest-asyncio==1.1.0
+pytest-mock==3.14.1
 
 # Utilities
 python-dateutil==2.8.2
-python-dotenv==1.0.0 
+python-dotenv==1.0.0
