@@ -382,8 +382,15 @@ class ConfluenceQAOrchestrator:
         self, query: str, conversation_id: str
     ) -> Dict[str, Any]:
         """Process query with full accuracy and optimized performance"""
+        from tracing.autogen_tracer import log, new_trace_id
 
         start_time = time.time()
+
+        # Generate trace_id for this query
+        trace_id = new_trace_id()
+
+        # Log start event
+        log("start", trace_id, query=query, conversation_id=conversation_id)
 
         # Initialize confidence tracker for this query
         self.confidence_tracker = ConfidenceTracker()
@@ -425,25 +432,63 @@ class ConfluenceQAOrchestrator:
         # Perform initial search to compute confidence
         initial_results = await self._get_initial_search_results(query, conversation_id)
 
+        # Log search results
+        log(
+            "search_results",
+            trace_id,
+            count=len(initial_results),
+            ids=[r.id for r in initial_results[:10]],  # First 10 IDs
+            scores=[r.score for r in initial_results[:10]],  # First 10 scores
+        )
+
         # Compute confidence based on search results and graph overlap
         query_confidence = await self._compute_query_confidence(
             initial_results, query, conversation_id
         )
 
+        # Log confidence
+        log(
+            "confidence",
+            trace_id,
+            confidence=query_confidence,
+            threshold=self.CONFIDENCE_THRESHOLD,
+            will_clarify=should_clarify(query_confidence, self.CONFIDENCE_THRESHOLD),
+        )
+
         # Check if we should clarify based on confidence
         if should_clarify(query_confidence, self.CONFIDENCE_THRESHOLD):
+            # Log clarify event
+            log(
+                "clarify",
+                trace_id,
+                reason="low_confidence",
+                confidence=query_confidence,
+            )
             return await self._handle_confidence_based_clarification(
                 query, query_confidence, analysis, conversation_id
             )
 
         # Handle based on classification
         if analysis.classification == "NeedsClarification":
+            log(
+                "clarify",
+                trace_id,
+                reason="needs_clarification",
+                classification=analysis.classification,
+            )
             return await self._handle_clarification(query, analysis, conversation_id)
 
         elif analysis.classification == "NeedsDecomposition":
+            log(
+                "synthesize",
+                trace_id,
+                mode="decomposition",
+                subquestions=len(analysis.subquestions),
+            )
             return await self._handle_complex_query(query, analysis, conversation_id)
 
         else:  # Atomic query
+            log("synthesize", trace_id, mode="atomic", confidence=query_confidence)
             return await self._handle_atomic_query(query, conversation_id)
 
     async def _handle_atomic_query(

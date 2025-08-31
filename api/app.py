@@ -1,89 +1,68 @@
 # api/app.py
-from fastapi import FastAPI
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.ask_endpoint import router as ask_router
-from api.trace_stream import attach_trace_handler
-from api.trace_stream import router as trace_router
 from api.trace_stream_otel import attach_otel_sse_processor
-from api.trace_stream_otel import router as otel_trace_router
-from tracing import otel_config
+from api.trace_stream_otel import router as trace_router
+from src.orchestrator import handle_query
+from tracing.autogen_tracer import log
+
+# Create FastAPI app directly
+app = FastAPI(title="Conf RAG Agents", version="0.1.0")
+
+# CORS middleware (tighten in production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Attach OTEL SSE processor and include router
+attach_otel_sse_processor()
+app.include_router(trace_router, prefix="/api")
 
 
-def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
-    app = FastAPI(
-        title="Conf RAG Agents",
-        description="Confluence Q&A Agents with OpenTelemetry tracing",
-        version="1.0.0",
+@app.get("/api/health")
+def health():
+    """Health check endpoint."""
+    return {"ok": True}
+
+
+@app.post("/api/ask")
+def ask(payload: dict = Body(...)):
+    """Main ask endpoint that integrates with orchestrator."""
+    q = payload.get("q")
+    if not q:
+        raise HTTPException(400, "Missing 'q'")
+
+    space = payload.get("space")
+    session_id = payload.get("session_id")
+    rerank = payload.get("rerank")  # optional boolean
+
+    return handle_query(q, space, session_id, rerank_toggle=rerank)
+
+
+@app.post("/api/feedback")
+def feedback(payload: dict = Body(...)):
+    """Feedback endpoint for trace quality."""
+    tid = payload.get("trace_id")
+    verdict = payload.get("verdict")
+
+    if not tid or not verdict:
+        raise HTTPException(400, "trace_id and verdict are required")
+
+    log(
+        "feedback",
+        tid,
+        verdict=verdict,
+        notes=payload.get("notes"),
+        better_doc_ids=payload.get("better_doc_ids", []),
     )
 
-    # Add CORS middleware for UI access
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    return {"ok": True}
 
-    # Initialize OpenTelemetry
-    otel_config.init()
-
-    # Attach trace handlers
-    attach_trace_handler()  # Legacy JSON trace handler
-    attach_otel_sse_processor()  # OpenTelemetry SSE processor
-
-    # Include routers
-    app.include_router(trace_router, prefix="/trace", tags=["Legacy Tracing"])
-    app.include_router(
-        otel_trace_router, prefix="/otel", tags=["OpenTelemetry Tracing"]
-    )
-    app.include_router(ask_router, tags=["Q&A"])
-
-    @app.get("/")
-    async def root():
-        """Root endpoint."""
-        return {
-            "service": "Confluence RAG Agents",
-            "status": "operational",
-            "endpoints": {
-                "ask": "/ask",
-                "ask_full": "/ask/full",
-                "legacy_trace": "/trace/{trace_id}",
-                "otel_trace": "/otel/trace/{trace_id}",
-                "otel_all": "/otel/trace",
-                "health": "/health",
-            },
-        }
-
-    @app.get("/health")
-    async def health_check():
-        """Health check endpoint."""
-        return {
-            "status": "healthy",
-            "service": "Confluence RAG Agents",
-            "tracing": {"legacy": "enabled", "opentelemetry": "enabled"},
-        }
-
-    @app.on_event("startup")
-    async def startup_event():
-        """Initialize services on startup."""
-        print("🚀 Confluence RAG Agents API starting...")
-        print("✅ Legacy tracing enabled at /trace/{trace_id}")
-        print("✅ OpenTelemetry tracing enabled at /otel/trace/{trace_id}")
-        print("📊 OpenTelemetry configured for AutoGen agents")
-
-    @app.on_event("shutdown")
-    async def shutdown_event():
-        """Cleanup on shutdown."""
-        print("👋 Shutting down Confluence RAG Agents API...")
-
-    return app
-
-
-# Create the application instance
-app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
