@@ -102,8 +102,19 @@ test = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.5.0",
     "httpx>=0.24.0",
     "responses>=0.23.0",
+    # Optional test-time dependencies used by functional/integration tests
+    # Note: sseclient package name on PyPI is sseclient-py, which imports as "sseclient"
+    "sseclient-py>=1.7.2",
+    "jsonschema>=4.20.0",
+    # Telemetry required by the API app during tests
+    "opentelemetry-api>=1.26.0",
+    "opentelemetry-sdk>=1.26.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.26.0",
+    "opentelemetry-instrumentation-openai>=0.46.0",
+    "azure-monitor-opentelemetry-exporter>=1.0.0b11",
 ]
 docs = [
     "sphinx>=7.0.0",
