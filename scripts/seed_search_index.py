@@ -95,9 +95,10 @@ def get_embedding(client: AzureOpenAI, text: str) -> List[float]:
 # --------------------------------------------------------------------------- #
 def main(dirpath: pathlib.Path, top: int | None):
     # ----- clients -----
+    index_name = os.getenv("AZURE_SEARCH_INDEX_NAME", "confluence-graph-embeddings-v2")
     search = SearchClient(
         os.environ["AZURE_SEARCH_ENDPOINT"],
-        index_name="confluence-graph-embeddings-v2",
+        index_name=index_name,
         credential=AzureKeyCredential(os.environ["AZURE_SEARCH_KEY"]),
     )
     aoai = AzureOpenAI(
