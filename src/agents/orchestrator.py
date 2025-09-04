@@ -1602,10 +1602,15 @@ Please try:
         # Update confidence based on verification
         if self.confidence_tracker:
             verification_confidence = verification_result.get("confidence", 0.5)
+            # Map textual risk levels to a numeric score for factor aggregation
+            risk_text = str(verification_result.get("risk_level", "unknown")).lower()
+            risk_map = {"none": 1.0, "low": 0.8, "medium": 0.5, "high": 0.2}
+            risk_level_score = risk_map.get(risk_text, 0.5)
+
             self.confidence_tracker.add_score(
                 "post_verification",
                 verification_confidence,
-                risk_level=verification_result.get("risk_level", "unknown"),
+                risk_level_score=risk_level_score,
                 accuracy=verification_result.get("quality_assessment", {}).get(
                     "accuracy", 0.5
                 ),

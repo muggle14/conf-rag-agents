@@ -1,0 +1,70 @@
+name: CI (Smoke/Integration/Functional)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      # Map these to your repo/environment secrets (DEV values)
+      ENVIRONMENT: dev
+      # Azure OpenAI
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AOAI_EMBED_DEPLOY: ${{ secrets.AOAI_EMBED_DEPLOY }}
+      # Legacy AOAI names used in orchestrator
+      AOAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AOAI_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      # Azure Search (two naming schemes to satisfy different modules)
+      AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+      AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+      AZURE_SEARCH_INDEX_NAME: ${{ secrets.AZURE_SEARCH_INDEX_NAME }}
+      SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+      SEARCH_INDEX: ${{ secrets.AZURE_SEARCH_INDEX_NAME }}
+      # Cosmos / Gremlin
+      COSMOS_ACCOUNT: ${{ secrets.COSMOS_ACCOUNT }}
+      COSMOS_DB: ${{ secrets.COSMOS_DB }}
+      COSMOS_GRAPH: ${{ secrets.COSMOS_GRAPH }}
+      COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
+      COSMOS_GRAPH_DB_ENDPOINT: ${{ secrets.COSMOS_GRAPH_DB_ENDPOINT }}
+      COSMOS_GRAPH_DB_KEY: ${{ secrets.COSMOS_GRAPH_DB_KEY }}
+      COSMOS_GRAPH_DB_DATABASE: ${{ secrets.COSMOS_GRAPH_DB_DATABASE }}
+      # Storage
+      STORAGE_ACCOUNT: ${{ secrets.STORAGE_ACCOUNT }}
+      STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
+      RAW_CONTAINER: ${{ secrets.RAW_CONTAINER }}
+      PROC_CONTAINER: ${{ secrets.PROC_CONTAINER }}
+      # Testing
+      AZURE_TEST_MODE: live
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Smoke tests
+        run: pytest tests/smoke -q -m smoke
+
+      - name: Integration tests
+        run: pytest tests/integration -q
+
+      - name: Functional tests
+        run: pytest tests/functional -q
