@@ -30,6 +30,14 @@ def health():
     return {"ok": True}
 
 
+def create_app() -> FastAPI:
+    """Compatibility factory for tests that expect a create_app() function.
+
+    Returns the already-initialized FastAPI application instance.
+    """
+    return app
+
+
 @app.post("/api/ask")
 def ask(payload: dict = Body(...)):
     """Main ask endpoint that integrates with orchestrator."""
