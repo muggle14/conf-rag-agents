@@ -5,11 +5,9 @@ Provides handle_query function that integrates with existing components.
 
 from typing import Any, Dict, Optional
 
-from memory.cosmos_session import SessionStore
-from src.agents.autogen_tools.graph_tool import GraphTool
-from src.agents.autogen_tools.search_tool import AzureSearchTool
 from src.agents.clarifier import ask_clarifying_question
 from src.agents.logic.confidence import compute_overlap, confidence, should_clarify
+from src.services import GraphService, SearchService, SessionService
 from tracing.autogen_tracer import log, new_trace_id
 
 
@@ -18,6 +16,10 @@ def handle_query(
     space: Optional[str] = None,
     session_id: Optional[str] = None,
     rerank_toggle: Optional[bool] = None,
+    *,
+    search: Optional[SearchService] = None,
+    graph: Optional[GraphService] = None,
+    session: Optional[SessionService] = None,
 ) -> Dict[str, Any]:
     """
     Handle user query with confidence-based clarification or answer.
@@ -27,6 +29,9 @@ def handle_query(
         space: Optional Confluence space filter
         session_id: Optional session ID for conversation tracking
         rerank_toggle: Optional boolean to enable/disable reranking
+        search: Optional injected SearchService
+        graph: Optional injected GraphService
+        session: Optional injected SessionService
 
     Returns:
         Dictionary with mode (clarify/answer/proceed), confidence, trace_id, and relevant data
@@ -38,15 +43,15 @@ def handle_query(
     log("start", trace_id, query=query, space=space, session_id=session_id)
 
     # Initialize tools
-    search_tool = AzureSearchTool()
-    graph_tool = GraphTool()
-    session_store = SessionStore()
+    search_service = search or SearchService()
+    graph_service = graph or GraphService()
+    session_service = session or SessionService()
 
     try:
         # 1) BASE SEARCH (with optional space filter)
         log("search_start", trace_id, query=query, space=space)
 
-        hits_raw = search_tool.search(
+        hits_raw = search_service.search(
             query, k=10, space=space, trace_id=trace_id, enable_agent_rerank=False
         )
 
@@ -75,7 +80,7 @@ def handle_query(
         # 2) OPTIONAL RE-RANK
         if rerank_toggle:
             log("rerank_start", trace_id)
-            hits = search_tool.search(
+            hits = search_service.search(
                 query, k=10, space=space, trace_id=trace_id, enable_agent_rerank=True
             )
             log("rerank_complete", trace_id, reranked_count=len(hits))
@@ -88,7 +93,7 @@ def handle_query(
 
         if primary_id:
             log("graph_start", trace_id, primary_id=primary_id)
-            neighbors = graph_tool.neighbors(primary_id, trace_id)
+            neighbors = graph_service.neighbors(primary_id, trace_id=trace_id)
 
             for group in ("parents", "children", "siblings"):
                 for n in neighbors.get(group, []):
@@ -119,7 +124,7 @@ def handle_query(
 
             # Remember in session
             if session_id:
-                session_store.remember_clarification(session_id, question)
+                session_service.remember_clarification(session_id, question)
 
             log("clarify", trace_id, question=question)
 

@@ -54,7 +54,7 @@ tracer.log("search_start", trace_id, query="test", mode="vector")
                  │
              Queue (buffer)
                  │
-        SSE stream (/trace/XYZ via FastAPI)
+        SSE stream (/api/trace/{trace_id} via FastAPI)
                  │
                Browser UI  ← live, ordered, per-run events
                  │
@@ -105,9 +105,11 @@ print(answer)
 ## API Endpoints
 
 - `POST /api/ask` - Ask questions
-- `POST /api/query` - Query the system
 - `GET /api/health` - Health check
-- `GET /api/metrics` - System metrics
+- `GET /api/trace/{trace_id}` - SSE trace stream (OTEL)
+
+Notes:
+- Canonical base is `/api`. Backward-compatible aliases at root: `/ask`, `/health`, `/trace/{trace_id}`.
 
 ## Testing
 
@@ -138,7 +140,7 @@ python -m scripts.seed_blob
 #### Prerequisites
 Set environment variables for integration tests:
 ```bash
-export API_BASE="http://localhost:8000"
+export API_BASE="http://localhost:8000/api"
 export TEST_SPECIFIC_QUERY="Graph Enrichment Skill"
 export TEST_AMBIGUOUS_QUERY="architecture"
 export AZURE_SEARCH_ENDPOINT="https://your-search.search.windows.net"
@@ -146,6 +148,26 @@ export AZURE_SEARCH_KEY="your-key"
 export COSMOS_GRAPH_DB_ENDPOINT="your-cosmos.gremlin.cosmos.azure.com"
 export COSMOS_GRAPH_DB_KEY="your-cosmos-key"
 ```
+
+### Environment Variable Names (Unified + Legacy)
+
+The app accepts unified variable names with legacy fallbacks for compatibility:
+
+- Azure Search:
+  - Unified: `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_KEY`, `AZURE_SEARCH_INDEX_NAME`
+  - Legacy: `SEARCH_ENDPOINT`, `AOAI_SEARCH_KEY`, `SEARCH_INDEX`
+- Azure OpenAI:
+  - Unified: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AOAI_EMBED_DEPLOY`
+  - Legacy: `AOAI_ENDPOINT`, `AOAI_KEY`, `AOAI_EMBED_DEPLOY`
+- Cosmos Gremlin (Graph):
+  - Unified: `COSMOS_GRAPH_DB_ENDPOINT` (host only), `COSMOS_GRAPH_DB_KEY`, `COSMOS_GRAPH_DB_DATABASE`, `COSMOS_GRAPH_DB_COLLECTION`
+  - Legacy: `COSMOS_DB_ENDPOINT` (any format), `COSMOS_DB_KEY`, `COSMOS_DB_DATABASE`, `COSMOS_DB_CONTAINER`
+- Cosmos SQL (Sessions):
+  - Unified: `COSMOS_SQL_ENDPOINT`, `COSMOS_SQL_KEY`, `COSMOS_SQL_DATABASE`, `COSMOS_SQL_CONTAINER`
+  - Legacy: `COSMOS_URL`, `COSMOS_KEY`, `COSMOS_SESSION_DATABASE`, `COSMOS_SESSION_CONTAINER`
+- Storage:
+  - Unified: `STORAGE_ACCOUNT`, `STORAGE_KEY`, `RAW_CONTAINER`, `PROC_CONTAINER`
+  - Legacy: `AZURE_STORAGE_CONNECTION_STRING`, `AZURE_STORAGE_CONTAINER_NAME`
 
 #### Unit Tests
 Run all unit tests:
@@ -301,6 +323,17 @@ Run hooks manually:
 ```bash
 pre-commit run --all-files
 ```
+
+## CI (Real Data)
+
+GitHub Actions workflow `.github/workflows/real-data-tests.yml` runs smoke, integration, and functional tests against a local API instance using real Azure services.
+
+Configure repository secrets for:
+- `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_KEY`, `AZURE_SEARCH_INDEX_NAME`
+- `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AOAI_EMBED_DEPLOY`
+- Optional: `COSMOS_GRAPH_DB_*`, `COSMOS_SQL_*`, `STORAGE_ACCOUNT`, `STORAGE_KEY`, `RAW_CONTAINER`, `PROC_CONTAINER`
+
+The workflow starts `uvicorn api.app:app` and uses `API_BASE=http://localhost:8000/api`.
 
 ## License
 

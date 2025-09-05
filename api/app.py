@@ -1,4 +1,10 @@
-# api/app.py
+"""
+api/app.py
+FastAPI application entrypoint. Ensures .env is loaded early so modules that read
+environment variables at import-time see the correct values.
+"""
+
+from dotenv import load_dotenv
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +12,9 @@ from api.trace_stream_otel import attach_otel_sse_processor
 from api.trace_stream_otel import router as trace_router
 from src.orchestrator import handle_query
 from tracing.autogen_tracer import log
+
+# Load environment variables from .env as early as possible after imports
+load_dotenv()
 
 # Create FastAPI app directly
 app = FastAPI(title="Conf RAG Agents", version="0.1.0")
@@ -19,15 +28,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Attach OTEL SSE processor and include router
+# Attach OTEL SSE processor and include routers
 attach_otel_sse_processor()
-app.include_router(trace_router, prefix="/api")
+app.include_router(trace_router, prefix="/api")  # canonical
+app.include_router(trace_router)  # backward-compatible root alias
 
 
 @app.get("/api/health")
 def health():
     """Health check endpoint."""
     return {"ok": True}
+
+
+# Backward-compatible root health alias
+@app.get("/health")
+def health_root():
+    return health()
 
 
 def create_app() -> FastAPI:
@@ -39,7 +55,7 @@ def create_app() -> FastAPI:
 
 
 @app.post("/api/ask")
-def ask(payload: dict = Body(...)):
+def ask(payload: dict = Body(...)):  # noqa: B008
     """Main ask endpoint that integrates with orchestrator."""
     q = payload.get("q")
     if not q:
@@ -52,8 +68,14 @@ def ask(payload: dict = Body(...)):
     return handle_query(q, space, session_id, rerank_toggle=rerank)
 
 
+# Backward-compatible root ask alias
+@app.post("/ask")
+def ask_root(payload: dict = Body(...)):  # noqa: B008
+    return ask(payload)
+
+
 @app.post("/api/feedback")
-def feedback(payload: dict = Body(...)):
+def feedback(payload: dict = Body(...)):  # noqa: B008
     """Feedback endpoint for trace quality."""
     tid = payload.get("trace_id")
     verdict = payload.get("verdict")

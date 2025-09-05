@@ -9,6 +9,8 @@ from azure.search.documents import SearchClient
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 
+from src.services import SearchService
+
 # Import AutoGen-compatible OpenTelemetry tracer
 from tracing import autogen_tracer as trace_logger
 
@@ -118,6 +120,36 @@ class AzureAISearchTool:
             search_mode=mode,
             index_name=INDEX_NAME,
         ) as (span, trace_id):
+            # Local helper to enrich docs with normalized fields while preserving originals
+            def _enrich_hits(docs: List[Dict]) -> List[Dict]:
+                enriched: List[Dict] = []
+                for d in docs:
+                    try:
+                        # Ensure a standard 'score' field exists (preserve '@search.score')
+                        if "score" not in d:
+                            raw_score = (
+                                d.get("@search.score") or d.get("search.score") or 0
+                            )
+                            d["score"] = float(raw_score) if raw_score else 0.0
+
+                        # Add a 'snippet' fallback derived from content/captions
+                        if "snippet" not in d:
+                            if "@search.captions" in d and d["@search.captions"]:
+                                d["snippet"] = (d["@search.captions"][0].text or "")[
+                                    :500
+                                ]
+                            else:
+                                content = d.get(TEXT_FIELD) or d.get("content") or ""
+                                if isinstance(content, str):
+                                    d["snippet"] = content[:500].replace("\n", " ")
+                                else:
+                                    d["snippet"] = ""
+                    except Exception:
+                        # Never fail normalization; keep original doc
+                        pass
+                    enriched.append(d)
+                return enriched
+
             if mode == "vector":
                 # Vector-only search
                 if not self._embed_cached:
@@ -154,31 +186,21 @@ class AzureAISearchTool:
                 span.set_attribute("search.result_count", len(results))
                 span.add_event("search_completed", {"result_count": len(results)})
 
-                return results
-            elif mode == "keyword":
-                # Keyword-only search
-                results = list(
-                    self._client.search(
-                        search_text=query,
-                        top=top,
-                        select=[
-                            "id",
-                            TEXT_FIELD,
-                            "title",
-                            "url",
-                            "parent_page_id",
-                            "children_ids",
-                            "adjacent_ids",
-                            "graph_centrality_score",
-                        ],
-                    )
+                return _enrich_hits(results)
+            elif mode in ("keyword", "semantic"):
+                # Delegate non-vector modes to unified SearchService for consistency
+                svc = SearchService()
+                hits = svc.search(
+                    query,
+                    k=top,
+                    trace_id=trace_id,
+                    enable_agent_rerank=False,
+                    mode=("semantic" if mode == "semantic" else "simple"),
                 )
 
-                # Add result count to span
-                span.set_attribute("search.result_count", len(results))
-                span.add_event("search_completed", {"result_count": len(results)})
-
-                return results
+                span.set_attribute("search.result_count", len(hits))
+                span.add_event("search_completed", {"result_count": len(hits)})
+                return hits
             elif mode == "hybrid":
                 # Hybrid search (vector + keyword)
                 q_vec = self._embed_cached(query)
@@ -211,7 +233,7 @@ class AzureAISearchTool:
                 span.set_attribute("search.result_count", len(results))
                 span.add_event("search_completed", {"result_count": len(results)})
 
-                return results
+                return _enrich_hits(results)
             else:
                 raise ValueError(
                     f"Invalid search mode: {mode}. Use 'vector', 'keyword', or 'hybrid'"

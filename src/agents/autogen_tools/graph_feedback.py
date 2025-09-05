@@ -28,8 +28,10 @@ import functools
 import hashlib
 import logging
 import os
+import re
 from collections.abc import Iterable
 from typing import Tuple
+from urllib.parse import urlparse
 
 from gremlin_python.driver import client, serializer
 from gremlin_python.process.traversal import T
@@ -39,10 +41,52 @@ from gremlin_python.process.traversal import T
 # --------------------------------------------------------------------------- #
 log = logging.getLogger("confluence-qa.graph-feedback")
 
-GREMLIN_ENDPOINT = os.getenv("COSMOS_GRAPH_DB_ENDPOINT")
-GREMLIN_KEY = os.getenv("COSMOS_GRAPH_DB_KEY")
-GRAPH_DB = os.getenv("COSMOS_GRAPH_DB_DATABASE")
-GRAPH_COLLECTION = os.getenv("COSMOS_GRAPH_DB_COLLECTION")
+
+def _first_non_empty(*values: str) -> str | None:
+    for v in values:
+        if v:
+            return v
+    return None
+
+
+def _extract_host(value: str | None) -> str | None:
+    """Normalize endpoint to host only (no scheme, no port/path)."""
+    if not value:
+        return None
+    v = value.strip()
+    # If it looks like a URL, parse it
+    if re.match(r"^[a-zA-Z]+://", v):
+        parsed = urlparse(v)
+        return (parsed.hostname or "").strip() or None
+    # Strip trailing port/path if given as host:port or host:port/
+    v = v.split("/")[0]
+    v = v.split(":")[0]
+    return v or None
+
+
+# Accept both unified and legacy variable names
+_ep_raw = _first_non_empty(
+    os.getenv("COSMOS_GRAPH_DB_ENDPOINT"),
+    os.getenv("COSMOS_DB_ENDPOINT"),
+)
+GREMLIN_ENDPOINT = _extract_host(_ep_raw)
+
+GREMLIN_KEY = _first_non_empty(
+    os.getenv("COSMOS_GRAPH_DB_KEY"),
+    os.getenv("COSMOS_DB_KEY"),
+)
+
+GRAPH_DB = _first_non_empty(
+    os.getenv("COSMOS_GRAPH_DB_DATABASE"),
+    os.getenv("COSMOS_DB_DATABASE"),
+    "confluence-graph",
+)
+
+GRAPH_COLLECTION = _first_non_empty(
+    os.getenv("COSMOS_GRAPH_DB_COLLECTION"),
+    os.getenv("COSMOS_DB_CONTAINER"),
+    "page-relationships",
+)
 GRAPH_PORT = 443
 
 
