@@ -1,0 +1,94 @@
+name: Real-Data Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Canonical API base under /api
+      API_BASE: http://localhost:8000/api
+      AUTOGEN_DISABLE_RUNTIME_TRACING: "false"
+
+      # Azure Search
+      AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+      AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+      AZURE_SEARCH_INDEX_NAME: ${{ secrets.AZURE_SEARCH_INDEX_NAME }}
+
+      # Azure OpenAI
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AOAI_EMBED_DEPLOY: ${{ secrets.AOAI_EMBED_DEPLOY }}
+
+      # Cosmos Gremlin (optional but recommended)
+      COSMOS_GRAPH_DB_ENDPOINT: ${{ secrets.COSMOS_GRAPH_DB_ENDPOINT }}
+      COSMOS_GRAPH_DB_KEY: ${{ secrets.COSMOS_GRAPH_DB_KEY }}
+      COSMOS_GRAPH_DB_DATABASE: ${{ secrets.COSMOS_GRAPH_DB_DATABASE }}
+      COSMOS_GRAPH_DB_COLLECTION: ${{ secrets.COSMOS_GRAPH_DB_COLLECTION }}
+
+      # Cosmos SQL (sessions) - optional
+      COSMOS_SQL_ENDPOINT: ${{ secrets.COSMOS_SQL_ENDPOINT }}
+      COSMOS_SQL_KEY: ${{ secrets.COSMOS_SQL_KEY }}
+      COSMOS_SQL_DATABASE: ${{ secrets.COSMOS_SQL_DATABASE }}
+      COSMOS_SQL_CONTAINER: ${{ secrets.COSMOS_SQL_CONTAINER }}
+
+      # Storage (optional; enables blob smoke tests)
+      STORAGE_ACCOUNT: ${{ secrets.STORAGE_ACCOUNT }}
+      STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
+      RAW_CONTAINER: ${{ secrets.RAW_CONTAINER }}
+      PROC_CONTAINER: ${{ secrets.PROC_CONTAINER }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[azure,test]
+
+      - name: Start API
+        run: |
+          nohup uvicorn api.app:app --host 0.0.0.0 --port 8000 --log-level info &
+          for i in {1..30}; do
+            curl -sf ${API_BASE}/health && break || sleep 1
+          done
+
+      - name: Smoke tests (real data, core)
+        run: pytest tests/smoke -q -m smoke -k "not graph"
+
+      - name: Smoke tests (Cosmos graph)
+        if: ${{ env.COSMOS_GRAPH_DB_ENDPOINT != '' && env.COSMOS_GRAPH_DB_KEY != '' }}
+        run: pytest tests/smoke/test_smoke_graph.py -q -m smoke
+
+      - name: Integration tests (real data, excluding legacy orchestrator)
+        run: pytest tests/integration -q -k "not orchestrator"
+
+      - name: Functional tests (real data)
+        run: pytest tests/functional -q
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            nohup.out
+            **/.pytest_cache

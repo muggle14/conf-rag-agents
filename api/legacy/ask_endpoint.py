@@ -1,5 +1,5 @@
 """
-API endpoint for /ask that integrates with the orchestrator.
+Legacy experimental API endpoint for /ask that integrates with the orchestrator.
 
 This endpoint provides the interface expected by functional tests:
 - Accepts query and optional space filter
@@ -9,7 +9,7 @@ This endpoint provides the interface expected by functional tests:
 
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -86,9 +86,9 @@ class AskResponse(BaseModel):
     confidence: float
     question: Optional[str] = None  # Clarification question if mode=clarify
     answer: Optional[str] = None  # Answer if mode=answer
-    sources: Optional[List[Dict[str, str]]] = None  # Sources with title/url
+    sources: Optional[list[dict[str, str]]] = None  # Sources with title/url
     primary_page_tree: Optional[Any] = None  # Tree structure (dict/array/string)
-    hits: Optional[List[Dict]] = None  # Search hits if mode=proceed
+    hits: Optional[list[dict]] = None  # Search hits if mode=proceed
 
 
 @router.post("/ask", response_model=AskResponse)

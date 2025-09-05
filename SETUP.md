@@ -238,6 +238,26 @@ docker build -t confluence-qa .
 # Run container
 docker run -p 8000:8000 confluence-qa
 
+## Local API (FastAPI)
+
+For local testing with the FastAPI app and real data:
+
+```bash
+# Ensure your .env is present
+export API_BASE=http://localhost:8000/api
+
+# Start the API (loads .env)
+uvicorn api.app:app --host 0.0.0.0 --port 8000 --env-file .env
+
+# Health
+curl -sS $API_BASE/health
+
+# Run tests
+pytest tests/smoke -q -m smoke
+pytest tests/integration -q -k "not orchestrator"
+pytest tests/functional -q
+```
+
 # Deploy to Azure Container Instances
 az container create --resource-group your-rg --name confluence-qa --image confluence-qa
 ```

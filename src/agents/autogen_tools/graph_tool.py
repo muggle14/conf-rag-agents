@@ -10,6 +10,7 @@ This module provides:
 """
 
 import os
+import re
 from typing import Any, Dict, Optional
 
 from gremlin_python.driver import client, serializer
@@ -32,18 +33,56 @@ class GraphTool:
             username: Database path for auth (defaults to environment variable)
             password: Access key (defaults to environment variable)
         """
-        # Use provided values or fall back to environment variables
+
+        def _first_non_empty(*values: str) -> Optional[str]:
+            for v in values:
+                if v:
+                    return v
+            return None
+
+        def _extract_host(value: Optional[str]) -> Optional[str]:
+            if not value:
+                return None
+            v = value.strip()
+            if re.match(r"^[a-zA-Z]+://", v):
+                from urllib.parse import urlparse
+
+                parsed = urlparse(v)
+                return parsed.hostname
+            v = v.split("/")[0]
+            v = v.split(":")[0]
+            return v
+
+        # Use provided values or fall back to environment variables (new or legacy)
         if not url:
-            endpoint = os.getenv("COSMOS_GRAPH_DB_ENDPOINT")
-            url = f"wss://{endpoint}:443/"
+            endpoint_raw = _first_non_empty(
+                os.getenv("COSMOS_GRAPH_DB_ENDPOINT"),
+                os.getenv("COSMOS_DB_ENDPOINT"),
+            )
+            host = _extract_host(endpoint_raw)
+            if not host:
+                raise ValueError(
+                    "Cosmos Gremlin endpoint not configured (COSMOS_GRAPH_DB_ENDPOINT or COSMOS_DB_ENDPOINT)"
+                )
+            url = f"wss://{host}:443/"
 
         if not username:
-            db = os.getenv("COSMOS_GRAPH_DB_DATABASE", "confluence-graph")
-            coll = os.getenv("COSMOS_GRAPH_DB_COLLECTION", "page-relationships")
+            db = _first_non_empty(
+                os.getenv("COSMOS_GRAPH_DB_DATABASE"),
+                os.getenv("COSMOS_DB_DATABASE"),
+                "confluence-graph",
+            )
+            coll = _first_non_empty(
+                os.getenv("COSMOS_GRAPH_DB_COLLECTION"),
+                os.getenv("COSMOS_DB_CONTAINER"),
+                "page-relationships",
+            )
             username = f"/dbs/{db}/colls/{coll}"
 
         if not password:
-            password = os.getenv("COSMOS_GRAPH_DB_KEY")
+            password = _first_non_empty(
+                os.getenv("COSMOS_GRAPH_DB_KEY"), os.getenv("COSMOS_DB_KEY")
+            )
 
         self.client = client.Client(
             url,

@@ -16,7 +16,24 @@ from typing import Any
 import azure.functions as func
 
 # Import your existing modules
-from orchestrator import AzureDataStore, ConfluenceQAOrchestrator
+# Prefer legacy orchestrator for Azure Functions entrypoints; fallback gracefully
+try:
+    from src.agents.legacy.orchestrator import (
+        AzureDataStore,
+        ConfluenceQAOrchestrator,
+    )
+except Exception:  # pragma: no cover - fallback paths
+    try:
+        from agents.legacy.orchestrator import (
+            AzureDataStore,
+            ConfluenceQAOrchestrator,
+        )
+    except Exception:
+        # Final fallback to keep imports resolvable in dev shells
+        from src.agents.orchestrator import (
+            AzureDataStore,
+            ConfluenceQAOrchestrator,
+        )
 
 from utils.cache import ResponseCache
 from utils.citations import CitationExtractor
